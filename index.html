@@ -427,6 +427,7 @@
       position: absolute;
       left: calc(var(--bike-progress, 0) * 1%);
       top: calc(76% - var(--bike-arc, 0) * 0.36%);
+      z-index: 3;
       transform: translate(-50%, -50%);
       font-size: clamp(2rem, 5vw, 3rem);
       filter: drop-shadow(0 8px 14px rgba(0,0,0,.24));
@@ -455,7 +456,11 @@
     }
 
     .start-dot { left: 18px; }
-    .finish-dot { right: 18px; }
+    .finish-dot { right: 18px; z-index: 2; }
+
+    .bike-on-route[hidden] {
+      display: none !important;
+    }
 
     .progress-row {
       display: flex;
@@ -852,7 +857,7 @@
                 <path class="route-path" d="M35 205 C130 110 210 230 305 138 C398 50 474 164 565 64" />
               </svg>
               <span class="start-dot">●</span>
-              <span class="bike-on-route" id="bike">🚴‍♂️</span>
+              <span class="bike-on-route" id="bike" hidden>🚴‍♂️</span>
               <span class="finish-dot">🏁</span>
             </div>
             <div class="progress-row">
@@ -1074,28 +1079,38 @@
 
     function updateBikeProgress() {
       if (!nearestRide) {
-        elements.bike.style.setProperty("--bike-progress", "4");
+        elements.bike.hidden = true;
+        elements.bike.style.setProperty("--bike-progress", "8");
         elements.bike.style.setProperty("--bike-arc", "0");
         elements.progressText.textContent = "Brak wyjazdu";
         return;
       }
 
+      elements.bike.hidden = false;
+
       const now = Date.now();
       const target = new Date(nearestRide.start_at).getTime();
-      const windowMs = 1000 * 60 * 60 * 24 * 14;
-      const distance = Math.max(0, target - now);
-      const progress = Math.max(4, Math.min(96, 100 - (distance / windowMs) * 100));
+      const created = nearestRide.created_at
+        ? new Date(nearestRide.created_at).getTime()
+        : target - 1000 * 60 * 60 * 24 * 14;
+
+      const total = Math.max(1, target - created);
+      const elapsed = Math.max(0, now - created);
+      const ratio = Math.max(0, Math.min(1, elapsed / total));
+
+      // 8–90%, żeby rower był zawsze widoczny i nie ucinał się przy mecie.
+      const progress = 8 + ratio * 82;
       const arc = Math.sin((progress / 100) * Math.PI) * 100;
 
       elements.bike.style.setProperty("--bike-progress", progress.toFixed(2));
       elements.bike.style.setProperty("--bike-arc", arc.toFixed(2));
 
-      if (distance <= 0) {
+      if (now >= target) {
         elements.progressText.textContent = "To już teraz";
-      } else if (progress < 15) {
-        elements.progressText.textContent = "Jeszcze spokojnie";
-      } else if (progress < 55) {
-        elements.progressText.textContent = "Rower już ruszył";
+      } else if (ratio < 0.25) {
+        elements.progressText.textContent = "Dopiero ruszył";
+      } else if (ratio < 0.70) {
+        elements.progressText.textContent = "Jest w trasie";
       } else {
         elements.progressText.textContent = "Meta coraz bliżej";
       }
