@@ -1,0 +1,1405 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#eef7ed" />
+  <title>Rowerowe wyjazdy</title>
+
+  <style>
+    :root {
+      --bg: #eef7ed;
+      --sky-1: #d8edf2;
+      --sky-2: #f4f4dc;
+      --hill-1: #b8d7ae;
+      --hill-2: #8fb985;
+      --hill-3: #5f8b63;
+      --ink: #13241a;
+      --muted: rgba(19, 36, 26, 0.68);
+      --soft: rgba(19, 36, 26, 0.42);
+      --card: rgba(255, 255, 246, 0.78);
+      --card-strong: rgba(255, 255, 246, 0.94);
+      --line: rgba(19, 36, 26, 0.12);
+      --shadow: rgba(44, 72, 49, 0.18);
+      --accent: #2f7c4d;
+      --accent-2: #70b36d;
+      --accent-soft: rgba(47, 124, 77, 0.10);
+      --danger: #a33a2b;
+      --success: #2f7c4d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      min-height: 100svh;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      text-rendering: optimizeLegibility;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .landscape {
+      position: fixed;
+      inset: 0;
+      z-index: -4;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 48%, #d9e9c9 100%);
+    }
+
+    .landscape::before {
+      content: "";
+      position: absolute;
+      width: 7.2rem;
+      height: 7.2rem;
+      right: 12vw;
+      top: 10vh;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 240, 178, 0.92), rgba(255, 220, 130, 0.48) 62%, transparent 64%);
+    }
+
+    .hill {
+      position: absolute;
+      left: 50%;
+      bottom: -18vh;
+      width: 120vw;
+      height: 48vh;
+      border-radius: 50% 50% 0 0;
+      transform: translateX(-50%);
+    }
+
+    .hill.one {
+      bottom: 6vh;
+      width: 115vw;
+      height: 36vh;
+      background: var(--hill-1);
+      opacity: 0.92;
+    }
+
+    .hill.two {
+      bottom: -2vh;
+      width: 132vw;
+      height: 44vh;
+      background: var(--hill-2);
+      opacity: 0.95;
+    }
+
+    .hill.three {
+      bottom: -17vh;
+      width: 145vw;
+      height: 50vh;
+      background: var(--hill-3);
+    }
+
+    .minimal-road-bg {
+      position: absolute;
+      left: 50%;
+      bottom: -9vh;
+      width: min(92vw, 980px);
+      height: 36vh;
+      transform: translateX(-50%);
+      border-radius: 50% 50% 0 0;
+      background:
+        radial-gradient(ellipse at 50% 110%, rgba(255, 255, 246, 0.50) 0 19%, transparent 20%),
+        linear-gradient(110deg, transparent 0 38%, rgba(255, 255, 246, 0.38) 39% 48%, transparent 49% 100%);
+      opacity: 0.9;
+    }
+
+    .page,
+    .topbar {
+      opacity: 0;
+      transition: opacity 520ms ease, transform 520ms ease;
+    }
+
+    .page {
+      min-height: 100svh;
+      width: 100%;
+      display: grid;
+      place-items: center;
+      padding: max(22px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(22px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+      transform: translateY(10px) scale(0.992);
+    }
+
+    body.is-ready .page,
+    body.is-ready .topbar {
+      opacity: 1;
+    }
+
+    body.is-ready .page {
+      transform: translateY(0) scale(1);
+    }
+
+    .loader {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      color: var(--ink);
+      background: rgba(238, 247, 237, 0.28);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      transition: opacity 420ms ease, visibility 420ms ease;
+    }
+
+    body.is-ready .loader {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .loader-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 17px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      background: var(--card-strong);
+      box-shadow: 0 16px 44px var(--shadow);
+      font-weight: 720;
+    }
+
+    .loader-bike {
+      display: inline-block;
+      animation: loaderBike 1100ms ease-in-out infinite;
+    }
+
+    @keyframes loaderBike {
+      0%, 100% { transform: translateX(-2px) rotate(-4deg); }
+      50% { transform: translateX(5px) rotate(4deg); }
+    }
+
+    .wrap {
+      width: min(1180px, 100%);
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      align-items: end;
+      padding: clamp(22px, 4vw, 34px);
+      border: 1px solid var(--line);
+      border-radius: 32px;
+      background: var(--card);
+      box-shadow: 0 22px 80px var(--shadow);
+      backdrop-filter: blur(20px) saturate(1.08);
+      -webkit-backdrop-filter: blur(20px) saturate(1.08);
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 0.84rem;
+      font-weight: 780;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 14ch;
+      margin: 0;
+      font-size: clamp(2.45rem, 7vw, 5.2rem);
+      font-weight: 760;
+      line-height: 0.98;
+      letter-spacing: -0.06em;
+      text-wrap: balance;
+    }
+
+    .subtitle {
+      max-width: 58ch;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.16rem);
+      line-height: 1.62;
+    }
+
+    .primary-button {
+      min-width: min(250px, 100%);
+      padding: 13px 20px;
+      border: 1px solid rgba(47, 124, 77, 0.22);
+      border-radius: 999px;
+      color: #f7fff8;
+      background: linear-gradient(180deg, #3e8d5a, #276d43);
+      font-weight: 780;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(39, 109, 67, 0.22);
+      transition: transform 160ms ease, filter 160ms ease, opacity 160ms ease;
+    }
+
+    .primary-button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    .primary-button:disabled {
+      cursor: wait;
+      opacity: 0.72;
+      transform: none;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--card);
+      box-shadow: 0 18px 60px var(--shadow);
+      backdrop-filter: blur(18px) saturate(1.08);
+      -webkit-backdrop-filter: blur(18px) saturate(1.08);
+      overflow: hidden;
+    }
+
+    .calendar-panel {
+      padding: clamp(18px, 3vw, 28px);
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .calendar-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: clamp(1.35rem, 3vw, 2.1rem);
+      font-weight: 760;
+      letter-spacing: -0.04em;
+    }
+
+    .month-controls {
+      display: inline-flex;
+      gap: 8px;
+    }
+
+    .icon-button {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255, 255, 246, 0.70);
+      cursor: pointer;
+      font-weight: 900;
+      font-size: 1.15rem;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .weekday,
+    .day {
+      min-height: clamp(42px, 7vw, 76px);
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      font-size: clamp(0.82rem, 1.5vw, 0.98rem);
+    }
+
+    .weekday {
+      min-height: 30px;
+      color: var(--soft);
+      font-weight: 760;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+
+    .day {
+      color: rgba(19, 36, 26, .72);
+      background: rgba(255, 255, 246, .50);
+      border: 1px solid rgba(19, 36, 26, .07);
+      position: relative;
+    }
+
+    .day.is-muted {
+      opacity: .32;
+    }
+
+    .day.has-event {
+      color: #f7fff8;
+      background: linear-gradient(180deg, #3e8d5a, #2e7449);
+      border-color: rgba(255,255,255,.42);
+      font-weight: 840;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 10px 24px rgba(39,109,67,.20);
+    }
+
+    .day.has-event::after {
+      content: "🚴";
+      position: absolute;
+      right: 7px;
+      bottom: 5px;
+      font-size: .82rem;
+    }
+
+    .side {
+      display: grid;
+      gap: 18px;
+    }
+
+    .route-panel,
+    .info-panel {
+      padding: clamp(18px, 3vw, 24px);
+    }
+
+    .panel-title {
+      margin: 0 0 12px;
+      color: var(--ink);
+      font-size: 1.2rem;
+      font-weight: 760;
+      letter-spacing: -0.03em;
+    }
+
+    .route-note {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .route-map {
+      position: relative;
+      min-height: 220px;
+      border-radius: 24px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 16% 84%, rgba(47,124,77,.12) 0 28%, transparent 29%),
+        radial-gradient(ellipse at 72% 24%, rgba(112,179,109,.18) 0 22%, transparent 23%),
+        linear-gradient(180deg, rgba(255,255,246,.58), rgba(255,255,246,.28));
+      border: 1px solid var(--line);
+    }
+
+    .route-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .route-path {
+      fill: none;
+      stroke: rgba(19, 36, 26, .30);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 1 18;
+    }
+
+    .route-solid {
+      fill: none;
+      stroke: rgba(47, 124, 77, .20);
+      stroke-width: 16;
+      stroke-linecap: round;
+    }
+
+    .bike-on-route {
+      position: absolute;
+      left: calc(var(--bike-progress, 0) * 1%);
+      top: calc(76% - var(--bike-arc, 0) * 0.36%);
+      transform: translate(-50%, -50%);
+      font-size: clamp(2rem, 5vw, 3rem);
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.24));
+      transition: left 900ms ease, top 900ms ease;
+      user-select: none;
+      animation: rideWobble 1100ms ease-in-out infinite;
+    }
+
+    @keyframes rideWobble {
+      0%, 100% { transform: translate(-50%, -50%) translateY(0) rotate(-2deg); }
+      50% { transform: translate(-50%, -50%) translateY(-2px) rotate(2deg); }
+    }
+
+    .start-dot,
+    .finish-dot {
+      position: absolute;
+      bottom: 30px;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(255,255,246,.82);
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 20px rgba(0,0,0,.10);
+    }
+
+    .start-dot { left: 18px; }
+    .finish-dot { right: 18px; }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.45;
+    }
+
+    .countdown-mini {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .mini-unit {
+      padding: 10px 8px;
+      border-radius: 16px;
+      background: rgba(255,255,246,.54);
+      border: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .mini-number {
+      display: block;
+      font-weight: 820;
+      font-variant-numeric: tabular-nums;
+      font-size: 1.2rem;
+    }
+
+    .mini-label {
+      display: block;
+      margin-top: 2px;
+      color: var(--soft);
+      font-size: .72rem;
+      font-weight: 760;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .event-item {
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255, 255, 246, 0.58);
+    }
+
+    .event-main {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .event-name {
+      margin: 0;
+      color: var(--ink);
+      font-weight: 760;
+      line-height: 1.25;
+    }
+
+    .event-date {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 720;
+      line-height: 1.35;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .event-meta,
+    .event-note {
+      margin: 7px 0 0;
+      color: var(--muted);
+      line-height: 1.46;
+      font-size: 0.92rem;
+    }
+
+    .event-note {
+      color: rgba(19, 36, 26, 0.58);
+    }
+
+    .date-line {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      max-width: 100%;
+      margin: 14px 0 0;
+      padding: 9px 13px;
+      border: 1px solid rgba(47, 124, 77, 0.16);
+      border-radius: 999px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      font-size: 0.94rem;
+      font-weight: 720;
+      line-height: 1.35;
+    }
+
+    .date-line[hidden] {
+      display: none !important;
+    }
+
+    .more-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .text-link {
+      border: 0;
+      padding: 0;
+      color: var(--accent);
+      background: transparent;
+      font-size: 0.94rem;
+      font-weight: 760;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 4px;
+      cursor: pointer;
+    }
+
+    .empty-state {
+      padding: 18px;
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      color: var(--muted);
+      line-height: 1.55;
+      background: rgba(255, 255, 246, 0.48);
+      text-align: center;
+    }
+
+    .empty-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: clamp(1.14rem, 2.4vw, 1.55rem);
+      font-weight: 760;
+      letter-spacing: -0.035em;
+      line-height: 1.15;
+    }
+
+    .empty-subtitle {
+      max-width: 44ch;
+      margin: 8px auto 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.55;
+    }
+
+    .main-actions {
+      display: flex;
+      justify-content: stretch;
+      margin-top: 16px;
+    }
+
+    .main-actions .primary-button {
+      width: 100%;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .modal.is-open {
+      display: flex;
+    }
+
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(19, 36, 26, 0.42);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .modal-panel {
+      width: min(660px, 100%);
+      max-height: min(760px, calc(100svh - 36px));
+      overflow: auto;
+      position: relative;
+      z-index: 1;
+      padding: clamp(20px, 4vw, 30px);
+      border: 1px solid var(--line);
+      border-radius: clamp(22px, 4vw, 34px);
+      background: var(--card-strong);
+      box-shadow: 0 24px 90px rgba(44, 72, 49, 0.26);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .modal-header > div {
+      flex: 1 1 auto;
+    }
+
+    .modal-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .close-button {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      align-self: flex-start;
+      display: grid;
+      place-items: center;
+      margin: 0;
+      padding: 0 0 2px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255, 255, 246, 0.70);
+      cursor: pointer;
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    .modal-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label {
+      color: rgba(19, 36, 26, 0.78);
+      font-size: 0.84rem;
+      font-weight: 760;
+      letter-spacing: 0.055em;
+      text-transform: uppercase;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      outline: none;
+      padding: 12px 13px;
+      color: var(--ink);
+      background: rgba(255, 255, 246, 0.72);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48);
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      border-color: rgba(47, 124, 77, 0.40);
+      box-shadow: 0 0 0 4px rgba(47, 124, 77, 0.10);
+    }
+
+    .field textarea {
+      min-height: 94px;
+      resize: vertical;
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder {
+      color: rgba(19, 36, 26, 0.38);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .honeypot {
+      position: absolute;
+      left: -9999px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .form-message {
+      min-height: 1.45em;
+      margin: 12px 0 0;
+      font-size: 0.94rem;
+      line-height: 1.45;
+    }
+
+    .form-message.success { color: var(--success); }
+    .form-message.error { color: var(--danger); }
+
+    @media (max-width: 920px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        min-height: 100dvh;
+        align-items: start;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .event-main {
+        display: block;
+      }
+
+      .event-date {
+        margin-top: 6px;
+        text-align: left;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .page,
+      .bike-on-route,
+      .loader,
+      .primary-button,
+      .text-link {
+        transition: none;
+        animation: none;
+      }
+    }
+  </style>
+</head>
+
+<body class="is-loading">
+  <div class="landscape" aria-hidden="true">
+    <div class="hill one"></div>
+    <div class="hill two"></div>
+    <div class="hill three"></div>
+    <div class="minimal-road-bg"></div>
+  </div>
+
+  <div class="loader" id="loader" aria-live="polite" aria-label="Ładowanie strony">
+    <div class="loader-card"><span class="loader-bike">🚴</span><span>Sprawdzamy kalendarz wyjazdów...</span></div>
+  </div>
+
+  <main class="page">
+    <div class="wrap">
+      <section class="hero" aria-labelledby="title">
+        <div>
+          <p class="eyebrow" id="eyebrow">Rowerowy kalendarz</p>
+          <h1 id="title">Wyjazdy rowerowe</h1>
+          <p class="subtitle" id="subtitle">Kalendarz najbliższych tras, startów i wspólnych przejazdów.</p>
+        </div>
+        <button class="primary-button" type="button" id="openFormButton">Zgłoś wyjazd</button>
+      </section>
+
+      <section class="main-grid">
+        <section class="panel calendar-panel" aria-label="Kalendarz wyjazdów">
+          <div class="calendar-header">
+            <h2 class="calendar-title" id="calendarTitle">Kalendarz</h2>
+            <div class="month-controls">
+              <button class="icon-button" type="button" id="prevMonth" aria-label="Poprzedni miesiąc">‹</button>
+              <button class="icon-button" type="button" id="nextMonth" aria-label="Następny miesiąc">›</button>
+            </div>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </section>
+
+        <aside class="side">
+          <section class="panel route-panel" aria-label="Trasa do najbliższego wyjazdu">
+            <h2 class="panel-title">Trasa do startu</h2>
+            <p class="route-note" id="routeNote">Czekamy na pierwszy zaplanowany wyjazd. Rower stoi przy starcie.</p>
+            <div class="route-map">
+              <svg class="route-svg" viewBox="0 0 600 260" preserveAspectRatio="none" aria-hidden="true">
+                <path class="route-solid" d="M35 205 C130 110 210 230 305 138 C398 50 474 164 565 64" />
+                <path class="route-path" d="M35 205 C130 110 210 230 305 138 C398 50 474 164 565 64" />
+              </svg>
+              <span class="start-dot">●</span>
+              <span class="bike-on-route" id="bike">🚴‍♂️</span>
+              <span class="finish-dot">🏁</span>
+            </div>
+            <div class="progress-row">
+              <span>Start</span>
+              <span id="progressText">Brak wyjazdu</span>
+              <span>Meta</span>
+            </div>
+            <div class="countdown-mini" id="countdownMini" hidden>
+              <div class="mini-unit"><span class="mini-number" id="days">00</span><span class="mini-label">dni</span></div>
+              <div class="mini-unit"><span class="mini-number" id="hours">00</span><span class="mini-label">godz.</span></div>
+              <div class="mini-unit"><span class="mini-number" id="minutes">00</span><span class="mini-label">min</span></div>
+              <div class="mini-unit"><span class="mini-number" id="seconds">00</span><span class="mini-label">sek</span></div>
+            </div>
+          </section>
+
+          <section class="panel info-panel" aria-label="Najbliższy wyjazd">
+            <h2 class="panel-title">Najbliższy wyjazd</h2>
+            <div id="nextEventBox" aria-live="polite"></div>
+            <div class="date-line" id="dateLine" aria-label="Data wyjazdu" hidden>
+              <span id="dateText"></span>
+            </div>
+            <div class="more-row">
+              <button class="text-link" type="button" id="openEventsButton">Wszystkie najbliższe</button>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <div class="modal" id="eventsModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="eventsModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="eventsModalTitle">Wszystkie wyjazdy</h2>
+          <p>Aktualne i kolejne zaplanowane trasy.</p>
+        </div>
+        <button class="close-button" type="button" aria-label="Zamknij" data-close-modal>×</button>
+      </div>
+      <div class="modal-list" id="eventsList"></div>
+    </section>
+  </div>
+
+  <div class="modal" id="formModal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="formModalTitle">Zgłoś wyjazd rowerowy</h2>
+          <p>Podaj termin, godziny i krótki opis trasy. Po sprawdzeniu wyjazd pojawi się w kalendarzu.</p>
+        </div>
+        <button class="close-button" type="button" aria-label="Zamknij" data-close-modal>×</button>
+      </div>
+
+      <form class="form-grid" id="rideForm">
+        <div class="field">
+          <label for="organizerName">Imię</label>
+          <input id="organizerName" name="organizer_name" type="text" maxlength="80" autocomplete="name" placeholder="np. Eugene" required />
+        </div>
+
+        <div class="field">
+          <label for="rideTitle">Tytuł wyjazdu</label>
+          <input id="rideTitle" name="title" type="text" maxlength="120" placeholder="np. spokojna trasa po lesie" required />
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label for="startAt">Od kiedy?</label>
+            <input id="startAt" name="start_at" type="datetime-local" required />
+          </div>
+
+          <div class="field">
+            <label for="endAt">Do kiedy?</label>
+            <input id="endAt" name="end_at" type="datetime-local" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="note">Komentarz / trasa</label>
+          <textarea id="note" name="note" maxlength="700" placeholder="Start, tempo, planowana trasa, dystans, uwagi"></textarea>
+        </div>
+
+        <div class="honeypot" aria-hidden="true">
+          <label for="website">Nie wypełniaj tego pola</label>
+          <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <button class="primary-button" id="submitButton" type="submit">Wyślij zgłoszenie</button>
+        <p class="form-message" id="formMessage" aria-live="polite"></p>
+      </form>
+    </section>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://vgtbmaftvvbludobmpsk.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_WsLuKgPX4P9L-9N61Y7wNw_nyXm8Iw7";
+    const TABLE_NAME = "bike_rides";
+
+    const API_URL = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}`;
+
+    let approvedRides = [];
+    let nearestRide = null;
+    let countdownTimer = null;
+    let activeModal = null;
+    let calendarCursor = new Date();
+    calendarCursor.setDate(1);
+
+    const elements = {
+      days: document.getElementById("days"),
+      hours: document.getElementById("hours"),
+      minutes: document.getElementById("minutes"),
+      seconds: document.getElementById("seconds"),
+      eyebrow: document.getElementById("eyebrow"),
+      title: document.getElementById("title"),
+      subtitle: document.getElementById("subtitle"),
+      dateLine: document.getElementById("dateLine"),
+      dateText: document.getElementById("dateText"),
+      routeNote: document.getElementById("routeNote"),
+      bike: document.getElementById("bike"),
+      progressText: document.getElementById("progressText"),
+      countdownMini: document.getElementById("countdownMini"),
+      nextEventBox: document.getElementById("nextEventBox"),
+      openEventsButton: document.getElementById("openEventsButton"),
+      calendarTitle: document.getElementById("calendarTitle"),
+      calendarGrid: document.getElementById("calendarGrid"),
+      prevMonth: document.getElementById("prevMonth"),
+      nextMonth: document.getElementById("nextMonth"),
+      eventsList: document.getElementById("eventsList"),
+      openFormButton: document.getElementById("openFormButton"),
+      eventsModal: document.getElementById("eventsModal"),
+      formModal: document.getElementById("formModal"),
+      form: document.getElementById("rideForm"),
+      submitButton: document.getElementById("submitButton"),
+      formMessage: document.getElementById("formMessage"),
+      startAt: document.getElementById("startAt"),
+      endAt: document.getElementById("endAt")
+    };
+
+    const apiHeaders = {
+      apikey: SUPABASE_KEY,
+      "Content-Type": "application/json"
+    };
+
+    const fullDateFormatter = new Intl.DateTimeFormat("pl-PL", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    const shortDateFormatter = new Intl.DateTimeFormat("pl-PL", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    const monthFormatter = new Intl.DateTimeFormat("pl-PL", {
+      month: "long",
+      year: "numeric"
+    });
+
+    function pad(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function createRideHtml(ride) {
+      const start = new Date(ride.start_at);
+      const end = new Date(ride.end_at);
+      const note = ride.note ? `<p class="event-note">${escapeHtml(ride.note)}</p>` : "";
+
+      return `
+        <article class="event-item">
+          <div class="event-main">
+            <p class="event-name">${escapeHtml(ride.title)}</p>
+            <time class="event-date" datetime="${escapeHtml(ride.start_at)}">${shortDateFormatter.format(start)} – ${shortDateFormatter.format(end)}</time>
+          </div>
+          <p class="event-meta">Organizuje: ${escapeHtml(ride.organizer_name)}</p>
+          ${note}
+        </article>
+      `;
+    }
+
+    function setCountdownToZero() {
+      elements.days.textContent = "00";
+      elements.hours.textContent = "00";
+      elements.minutes.textContent = "00";
+      elements.seconds.textContent = "00";
+    }
+
+    function toDatetimeLocal(date) {
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function setDefaultDates() {
+      const start = new Date();
+      start.setHours(start.getHours() + 2);
+      start.setMinutes(0, 0, 0);
+
+      const end = new Date(start);
+      end.setHours(end.getHours() + 2);
+
+      elements.startAt.min = toDatetimeLocal(new Date());
+      elements.endAt.min = toDatetimeLocal(new Date());
+      elements.startAt.value = toDatetimeLocal(start);
+      elements.endAt.value = toDatetimeLocal(end);
+    }
+
+    function updateBikeProgress() {
+      if (!nearestRide) {
+        elements.bike.style.setProperty("--bike-progress", "4");
+        elements.bike.style.setProperty("--bike-arc", "0");
+        elements.progressText.textContent = "Brak wyjazdu";
+        return;
+      }
+
+      const now = Date.now();
+      const target = new Date(nearestRide.start_at).getTime();
+      const windowMs = 1000 * 60 * 60 * 24 * 14;
+      const distance = Math.max(0, target - now);
+      const progress = Math.max(4, Math.min(96, 100 - (distance / windowMs) * 100));
+      const arc = Math.sin((progress / 100) * Math.PI) * 100;
+
+      elements.bike.style.setProperty("--bike-progress", progress.toFixed(2));
+      elements.bike.style.setProperty("--bike-arc", arc.toFixed(2));
+
+      if (distance <= 0) {
+        elements.progressText.textContent = "To już teraz";
+      } else if (progress < 15) {
+        elements.progressText.textContent = "Jeszcze spokojnie";
+      } else if (progress < 55) {
+        elements.progressText.textContent = "Rower już ruszył";
+      } else {
+        elements.progressText.textContent = "Meta coraz bliżej";
+      }
+    }
+
+    function updateMainView() {
+      if (!nearestRide) {
+        elements.eyebrow.textContent = "Rowerowy kalendarz";
+        elements.title.textContent = "Brak zaplanowanych wyjazdów";
+        elements.subtitle.textContent = "Kalendarz jest pusty, ale zawsze można zaproponować trasę i zebrać ekipę.";
+        elements.dateLine.hidden = true;
+        elements.countdownMini.hidden = true;
+        elements.nextEventBox.innerHTML = `
+          <div class="empty-state">
+            <p class="empty-title">Nie ma jeszcze wyjazdów</p>
+            <p class="empty-subtitle">Dodaj pierwszy termin, start albo krótki opis trasy.</p>
+          </div>
+        `;
+        setCountdownToZero();
+        updateBikeProgress();
+        renderCalendar();
+        return;
+      }
+
+      const start = new Date(nearestRide.start_at);
+      const end = new Date(nearestRide.end_at);
+
+      elements.eyebrow.textContent = nearestRide.organizer_name || "Rowerowy kalendarz";
+      elements.title.textContent = nearestRide.title;
+      elements.subtitle.textContent = nearestRide.note || "Najbliższy wyjazd jest już w kalendarzu.";
+      elements.dateLine.hidden = false;
+      elements.dateText.textContent = `${fullDateFormatter.format(start)} – ${fullDateFormatter.format(end)}`;
+      elements.countdownMini.hidden = false;
+      elements.routeNote.textContent = "Im bliżej terminu, tym bliżej rower do mety.";
+      elements.nextEventBox.innerHTML = createRideHtml(nearestRide);
+      updateBikeProgress();
+      renderCalendar();
+    }
+
+    function updateCountdown() {
+      if (!nearestRide) {
+        return;
+      }
+
+      const targetTime = new Date(nearestRide.start_at).getTime();
+      const distance = Math.max(0, targetTime - Date.now());
+
+      const second = 1000;
+      const minute = second * 60;
+      const hour = minute * 60;
+      const day = hour * 24;
+
+      const days = Math.floor(distance / day);
+      const hours = Math.floor((distance % day) / hour);
+      const minutes = Math.floor((distance % hour) / minute);
+      const seconds = Math.floor((distance % minute) / second);
+
+      elements.days.textContent = pad(days);
+      elements.hours.textContent = pad(hours);
+      elements.minutes.textContent = pad(minutes);
+      elements.seconds.textContent = pad(seconds);
+      updateBikeProgress();
+    }
+
+    function restartCountdown() {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+      }
+
+      updateMainView();
+      updateCountdown();
+      countdownTimer = setInterval(updateCountdown, 1000);
+    }
+
+    function renderEventsModal() {
+      if (!approvedRides.length) {
+        elements.eventsList.innerHTML = `
+          <div class="empty-state">
+            <p class="empty-title">Nie ma jeszcze wyjazdów</p>
+            <p class="empty-subtitle">Zawsze można zaproponować trasę i zebrać ekipę na spokojny przejazd.</p>
+          </div>
+        `;
+        return;
+      }
+
+      elements.eventsList.innerHTML = approvedRides.map(createRideHtml).join("");
+    }
+
+    function renderCalendar() {
+      const year = calendarCursor.getFullYear();
+      const month = calendarCursor.getMonth();
+      const first = new Date(year, month, 1);
+      const firstWeekday = (first.getDay() + 6) % 7;
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const previousMonthDays = new Date(year, month, 0).getDate();
+
+      const eventDays = new Set(
+        approvedRides.map((ride) => {
+          const date = new Date(ride.start_at);
+          return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        })
+      );
+
+      elements.calendarTitle.textContent = monthFormatter.format(calendarCursor);
+
+      const weekdays = ["pn", "wt", "śr", "cz", "pt", "so", "nd"];
+      let html = weekdays.map((day) => `<div class="weekday">${day}</div>`).join("");
+
+      for (let i = firstWeekday - 1; i >= 0; i -= 1) {
+        html += `<div class="day is-muted">${previousMonthDays - i}</div>`;
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const key = `${year}-${month}-${day}`;
+        const hasEvent = eventDays.has(key);
+        html += `<div class="day ${hasEvent ? "has-event" : ""}">${day}</div>`;
+      }
+
+      const totalCells = firstWeekday + daysInMonth;
+      const tail = (7 - (totalCells % 7)) % 7;
+      for (let day = 1; day <= tail; day += 1) {
+        html += `<div class="day is-muted">${day}</div>`;
+      }
+
+      elements.calendarGrid.innerHTML = html;
+    }
+
+    async function loadRides() {
+      try {
+        const query = new URLSearchParams({
+          select: "id,created_at,organizer_name,title,start_at,end_at,note",
+          order: "start_at.asc",
+          limit: "80"
+        });
+
+        const response = await fetch(`${API_URL}?${query.toString()}`, {
+          method: "GET",
+          headers: apiHeaders
+        });
+
+        if (!response.ok) {
+          throw new Error(`Supabase error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const now = Date.now();
+
+        approvedRides = data
+          .filter((ride) => new Date(ride.end_at).getTime() >= now)
+          .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+
+        nearestRide = approvedRides[0] ?? null;
+        renderEventsModal();
+        restartCountdown();
+      } catch (error) {
+        console.error(error);
+        elements.nextEventBox.innerHTML = `<div class="empty-state">Nie udało się pobrać listy. Spróbuj odświeżyć stronę za chwilę.</div>`;
+        renderCalendar();
+      }
+    }
+
+    function openModal(modal) {
+      closeModal();
+      activeModal = modal;
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.classList.add("modal-open");
+    }
+
+    function closeModal() {
+      if (!activeModal) {
+        return;
+      }
+
+      activeModal.classList.remove("is-open");
+      activeModal.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("modal-open");
+      activeModal = null;
+    }
+
+    function showFormMessage(message, type) {
+      elements.formMessage.textContent = message;
+      elements.formMessage.className = `form-message ${type}`;
+    }
+
+    async function submitRide(event) {
+      event.preventDefault();
+
+      const formData = new FormData(elements.form);
+      const honeypot = String(formData.get("website") || "").trim();
+
+      if (honeypot) {
+        showFormMessage("Dziękujemy za zgłoszenie.", "success");
+        elements.form.reset();
+        return;
+      }
+
+      const organizerName = String(formData.get("organizer_name") || "").trim();
+      const title = String(formData.get("title") || "").trim();
+      const startAtInput = String(formData.get("start_at") || "").trim();
+      const endAtInput = String(formData.get("end_at") || "").trim();
+      const note = String(formData.get("note") || "").trim();
+
+      if (!organizerName || !title || !startAtInput || !endAtInput) {
+        showFormMessage("Uzupełnij imię, tytuł oraz godziny wyjazdu.", "error");
+        return;
+      }
+
+      const startDate = new Date(startAtInput);
+      const endDate = new Date(endAtInput);
+
+      if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        showFormMessage("Podana data jest nieprawidłowa.", "error");
+        return;
+      }
+
+      if (startDate.getTime() <= Date.now()) {
+        showFormMessage("Start wyjazdu musi być w przyszłości.", "error");
+        return;
+      }
+
+      if (endDate.getTime() <= startDate.getTime()) {
+        showFormMessage("Godzina zakończenia musi być późniejsza niż start.", "error");
+        return;
+      }
+
+      elements.submitButton.disabled = true;
+      showFormMessage("Wysyłanie zgłoszenia...", "");
+
+      try {
+        const payload = {
+          organizer_name: organizerName,
+          title,
+          start_at: startDate.toISOString(),
+          end_at: endDate.toISOString(),
+          note: note || null
+        };
+
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            ...apiHeaders,
+            Prefer: "return=minimal"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `Supabase error: ${response.status}`);
+        }
+
+        elements.form.reset();
+        setDefaultDates();
+        showFormMessage("Zgłoszenie zapisane. Po sprawdzeniu pojawi się w kalendarzu.", "success");
+      } catch (error) {
+        console.error(error);
+        showFormMessage("Nie udało się zapisać zgłoszenia. Sprawdź dane albo spróbuj później.", "error");
+      } finally {
+        elements.submitButton.disabled = false;
+      }
+    }
+
+    function revealPage() {
+      requestAnimationFrame(() => {
+        document.body.classList.remove("is-loading");
+        document.body.classList.add("is-ready");
+      });
+    }
+
+    elements.openEventsButton.addEventListener("click", () => openModal(elements.eventsModal));
+    elements.openFormButton.addEventListener("click", () => openModal(elements.formModal));
+    elements.form.addEventListener("submit", submitRide);
+
+    elements.prevMonth.addEventListener("click", () => {
+      calendarCursor.setMonth(calendarCursor.getMonth() - 1);
+      renderCalendar();
+    });
+
+    elements.nextMonth.addEventListener("click", () => {
+      calendarCursor.setMonth(calendarCursor.getMonth() + 1);
+      renderCalendar();
+    });
+
+    document.addEventListener("click", (event) => {
+      if (event.target.matches("[data-close-modal]")) {
+        closeModal();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeModal();
+      }
+    });
+
+    setDefaultDates();
+    renderCalendar();
+    updateBikeProgress();
+
+    Promise.all([
+      loadRides(),
+      new Promise((resolve) => setTimeout(resolve, 1200))
+    ]).finally(revealPage);
+  </script>
+</body>
+</html>
