@@ -220,13 +220,17 @@
     }
 
     h1 {
-      max-width: 14ch;
+      max-width: 15ch;
       margin: 0;
       font-size: clamp(2.45rem, 7vw, 5.2rem);
       font-weight: 760;
       line-height: 0.98;
       letter-spacing: -0.06em;
       text-wrap: balance;
+    }
+
+    h1[hidden] {
+      display: none !important;
     }
 
     .subtitle {
@@ -425,8 +429,8 @@
 
     .bike-on-route {
       position: absolute;
-      left: calc(var(--bike-progress, 0) * 1%);
-      top: calc(76% - var(--bike-arc, 0) * 0.36%);
+      left: var(--bike-x, 6%);
+      top: var(--bike-y, 78%);
       z-index: 3;
       transform: translate(-50%, -50%);
       font-size: clamp(2rem, 5vw, 3rem);
@@ -444,7 +448,6 @@
     .start-dot,
     .finish-dot {
       position: absolute;
-      bottom: 30px;
       width: 34px;
       height: 34px;
       display: grid;
@@ -453,12 +456,25 @@
       background: rgba(255,255,246,.82);
       border: 1px solid var(--line);
       box-shadow: 0 8px 20px rgba(0,0,0,.10);
+      transform: translate(-50%, -50%);
     }
 
-    .start-dot { left: 18px; }
-    .finish-dot { right: 18px; z-index: 2; }
+    .start-dot {
+      left: 5.8%;
+      top: 78.8%;
+    }
 
-    .bike-on-route[hidden] {
+    .finish-dot {
+      left: 94.2%;
+      top: 24.6%;
+      z-index: 2;
+    }
+
+    .bike-on-route[hidden],
+    .start-dot[hidden],
+    .finish-dot[hidden],
+    .progress-row[hidden],
+    .countdown-mini[hidden] {
       display: none !important;
     }
 
@@ -850,17 +866,17 @@
         <aside class="side">
           <section class="panel route-panel" aria-label="Trasa do najbliższego wyjazdu">
             <h2 class="panel-title">Trasa do startu</h2>
-            <p class="route-note" id="routeNote">Czekamy na pierwszy zaplanowany wyjazd. Rower stoi przy starcie.</p>
-            <div class="route-map">
+            <p class="route-note" id="routeNote">Trasa jest gotowa. Rower pojawi się, gdy będzie zaplanowany najbliższy wyjazd.</p>
+            <div class="route-map" id="routeMap">
               <svg class="route-svg" viewBox="0 0 600 260" preserveAspectRatio="none" aria-hidden="true">
                 <path class="route-solid" d="M35 205 C130 110 210 230 305 138 C398 50 474 164 565 64" />
-                <path class="route-path" d="M35 205 C130 110 210 230 305 138 C398 50 474 164 565 64" />
+                <path class="route-path" id="routePathLine" d="M35 205 C130 110 210 230 305 138 C398 50 474 164 565 64" />
               </svg>
-              <span class="start-dot">●</span>
+              <span class="start-dot" id="startDot" hidden>●</span>
               <span class="bike-on-route" id="bike" hidden>🚴‍♂️</span>
-              <span class="finish-dot">🏁</span>
+              <span class="finish-dot" id="finishDot" hidden>🏁</span>
             </div>
-            <div class="progress-row">
+            <div class="progress-row" id="progressRow" hidden>
               <span>Start</span>
               <span id="progressText">Brak wyjazdu</span>
               <span>Meta</span>
@@ -976,8 +992,13 @@
       subtitle: document.getElementById("subtitle"),
       dateLine: document.getElementById("dateLine"),
       dateText: document.getElementById("dateText"),
+      routeMap: document.getElementById("routeMap"),
+      routePathLine: document.getElementById("routePathLine"),
       routeNote: document.getElementById("routeNote"),
       bike: document.getElementById("bike"),
+      startDot: document.getElementById("startDot"),
+      finishDot: document.getElementById("finishDot"),
+      progressRow: document.getElementById("progressRow"),
       progressText: document.getElementById("progressText"),
       countdownMini: document.getElementById("countdownMini"),
       nextEventBox: document.getElementById("nextEventBox"),
@@ -1077,16 +1098,42 @@
       elements.endAt.value = toDatetimeLocal(end);
     }
 
+    function positionBikeOnPath(ratio) {
+      const path = elements.routePathLine;
+      const map = elements.routeMap;
+
+      if (!path || !map || typeof path.getTotalLength !== "function") {
+        elements.bike.style.setProperty("--bike-x", `${8 + ratio * 82}%`);
+        elements.bike.style.setProperty("--bike-y", `${78 - Math.sin(ratio * Math.PI) * 36}%`);
+        return;
+      }
+
+      const length = path.getTotalLength();
+      const clampedRatio = Math.max(0.03, Math.min(0.94, ratio));
+      const point = path.getPointAtLength(length * clampedRatio);
+      const rect = map.getBoundingClientRect();
+
+      const x = (point.x / 600) * rect.width;
+      const y = (point.y / 260) * rect.height;
+
+      elements.bike.style.setProperty("--bike-x", `${x}px`);
+      elements.bike.style.setProperty("--bike-y", `${y}px`);
+    }
+
     function updateBikeProgress() {
       if (!nearestRide) {
         elements.bike.hidden = true;
-        elements.bike.style.setProperty("--bike-progress", "8");
-        elements.bike.style.setProperty("--bike-arc", "0");
-        elements.progressText.textContent = "Brak wyjazdu";
+        elements.startDot.hidden = true;
+        elements.finishDot.hidden = true;
+        elements.progressRow.hidden = true;
+        elements.progressText.textContent = "";
         return;
       }
 
       elements.bike.hidden = false;
+      elements.startDot.hidden = false;
+      elements.finishDot.hidden = false;
+      elements.progressRow.hidden = false;
 
       const now = Date.now();
       const target = new Date(nearestRide.start_at).getTime();
@@ -1098,12 +1145,7 @@
       const elapsed = Math.max(0, now - created);
       const ratio = Math.max(0, Math.min(1, elapsed / total));
 
-      // 8–90%, żeby rower był zawsze widoczny i nie ucinał się przy mecie.
-      const progress = 8 + ratio * 82;
-      const arc = Math.sin((progress / 100) * Math.PI) * 100;
-
-      elements.bike.style.setProperty("--bike-progress", progress.toFixed(2));
-      elements.bike.style.setProperty("--bike-arc", arc.toFixed(2));
+      positionBikeOnPath(ratio);
 
       if (now >= target) {
         elements.progressText.textContent = "To już teraz";
@@ -1119,7 +1161,8 @@
     function updateMainView() {
       if (!nearestRide) {
         elements.eyebrow.textContent = "Rowerowy kalendarz";
-        elements.title.textContent = "Brak zaplanowanych wyjazdów";
+        elements.title.hidden = true;
+        elements.title.textContent = "";
         elements.subtitle.textContent = "Kalendarz jest pusty, ale zawsze można zaproponować trasę i zebrać ekipę.";
         elements.dateLine.hidden = true;
         elements.countdownMini.hidden = true;
@@ -1129,6 +1172,7 @@
             <p class="empty-subtitle">Dodaj pierwszy termin, start albo krótki opis trasy.</p>
           </div>
         `;
+        elements.routeNote.textContent = "Trasa jest gotowa. Rower pojawi się, gdy będzie zaplanowany najbliższy wyjazd.";
         setCountdownToZero();
         updateBikeProgress();
         renderCalendar();
@@ -1139,6 +1183,7 @@
       const end = new Date(nearestRide.end_at);
 
       elements.eyebrow.textContent = nearestRide.organizer_name || "Rowerowy kalendarz";
+      elements.title.hidden = false;
       elements.title.textContent = nearestRide.title;
       elements.subtitle.textContent = nearestRide.note || "Najbliższy wyjazd jest już w kalendarzu.";
       elements.dateLine.hidden = false;
@@ -1393,6 +1438,10 @@
     elements.nextMonth.addEventListener("click", () => {
       calendarCursor.setMonth(calendarCursor.getMonth() + 1);
       renderCalendar();
+    });
+
+    window.addEventListener("resize", () => {
+      updateBikeProgress();
     });
 
     document.addEventListener("click", (event) => {
