@@ -388,9 +388,7 @@
     }
 
     .route-note {
-      margin: 0 0 16px;
-      color: var(--muted);
-      line-height: 1.55;
+      display: none;
     }
 
     .route-map {
@@ -420,6 +418,21 @@
       stroke-dasharray: 1 18;
     }
 
+    .route-map.is-active {
+      background:
+        radial-gradient(ellipse at 16% 84%, rgba(190, 74, 61, .10) 0 28%, transparent 29%),
+        radial-gradient(ellipse at 72% 24%, rgba(214, 108, 91, .16) 0 22%, transparent 23%),
+        linear-gradient(180deg, rgba(255,250,246,.62), rgba(255,236,230,.36));
+    }
+
+    .route-map.is-active .route-solid {
+      stroke: rgba(190, 74, 61, .18);
+    }
+
+    .route-map.is-active .route-path {
+      stroke: rgba(150, 48, 38, .32);
+    }
+
     .route-solid {
       fill: none;
       stroke: rgba(47, 124, 77, .20);
@@ -432,7 +445,7 @@
       left: var(--bike-x, 6%);
       top: var(--bike-y, 78%);
       z-index: 3;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scaleX(-1);
       font-size: clamp(2rem, 5vw, 3rem);
       filter: drop-shadow(0 8px 14px rgba(0,0,0,.24));
       transition: left 900ms ease, top 900ms ease;
@@ -441,8 +454,8 @@
     }
 
     @keyframes rideWobble {
-      0%, 100% { transform: translate(-50%, -50%) translateY(0) rotate(-2deg); }
-      50% { transform: translate(-50%, -50%) translateY(-2px) rotate(2deg); }
+      0%, 100% { transform: translate(-50%, -50%) scaleX(-1) translateY(0) rotate(-2deg); }
+      50% { transform: translate(-50%, -50%) scaleX(-1) translateY(-2px) rotate(2deg); }
     }
 
     .start-dot,
@@ -479,13 +492,7 @@
     }
 
     .progress-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: .92rem;
-      line-height: 1.45;
+      display: none !important;
     }
 
     .countdown-mini {
@@ -1122,6 +1129,7 @@
 
     function updateBikeProgress() {
       if (!nearestRide) {
+        elements.routeMap.classList.remove("is-active");
         elements.bike.hidden = true;
         elements.startDot.hidden = true;
         elements.finishDot.hidden = true;
@@ -1130,26 +1138,44 @@
         return;
       }
 
+      const now = Date.now();
+      const start = new Date(nearestRide.start_at).getTime();
+      const end = new Date(nearestRide.end_at).getTime();
+      const isActive = now >= start && now <= end;
+
       elements.bike.hidden = false;
       elements.startDot.hidden = false;
       elements.finishDot.hidden = false;
-      elements.progressRow.hidden = false;
+      elements.progressRow.hidden = true;
 
-      const now = Date.now();
-      const target = new Date(nearestRide.start_at).getTime();
+      if (isActive) {
+        const total = Math.max(1, end - start);
+        const elapsed = Math.max(0, now - start);
+        const ratio = Math.max(0, Math.min(1, elapsed / total));
+
+        elements.routeMap.classList.add("is-active");
+        elements.startDot.textContent = "🏁";
+        elements.finishDot.textContent = "🎉";
+        elements.progressText.textContent = "Wyjazd trwa";
+        positionBikeOnPath(ratio);
+        return;
+      }
+
+      elements.routeMap.classList.remove("is-active");
+      elements.startDot.textContent = "●";
+      elements.finishDot.textContent = "🏁";
+
       const created = nearestRide.created_at
         ? new Date(nearestRide.created_at).getTime()
-        : target - 1000 * 60 * 60 * 24 * 14;
+        : start - 1000 * 60 * 60 * 24 * 14;
 
-      const total = Math.max(1, target - created);
+      const total = Math.max(1, start - created);
       const elapsed = Math.max(0, now - created);
       const ratio = Math.max(0, Math.min(1, elapsed / total));
 
       positionBikeOnPath(ratio);
 
-      if (now >= target) {
-        elements.progressText.textContent = "To już teraz";
-      } else if (ratio < 0.25) {
+      if (ratio < 0.25) {
         elements.progressText.textContent = "Dopiero ruszył";
       } else if (ratio < 0.70) {
         elements.progressText.textContent = "Jest w trasie";
@@ -1172,7 +1198,7 @@
             <p class="empty-subtitle">Dodaj pierwszy termin, start albo krótki opis trasy.</p>
           </div>
         `;
-        elements.routeNote.textContent = "Trasa jest gotowa. Rower pojawi się, gdy będzie zaplanowany najbliższy wyjazd.";
+        elements.routeNote.textContent = "";
         setCountdownToZero();
         updateBikeProgress();
         renderCalendar();
@@ -1189,7 +1215,7 @@
       elements.dateLine.hidden = false;
       elements.dateText.textContent = `${fullDateFormatter.format(start)} – ${fullDateFormatter.format(end)}`;
       elements.countdownMini.hidden = false;
-      elements.routeNote.textContent = "Im bliżej terminu, tym bliżej rower do mety.";
+      elements.routeNote.textContent = "";
       elements.nextEventBox.innerHTML = createRideHtml(nearestRide);
       updateBikeProgress();
       renderCalendar();
@@ -1200,8 +1226,11 @@
         return;
       }
 
-      const targetTime = new Date(nearestRide.start_at).getTime();
-      const distance = Math.max(0, targetTime - Date.now());
+      const now = Date.now();
+      const startTime = new Date(nearestRide.start_at).getTime();
+      const endTime = new Date(nearestRide.end_at).getTime();
+      const targetTime = now >= startTime && now <= endTime ? endTime : startTime;
+      const distance = Math.max(0, targetTime - now);
 
       const second = 1000;
       const minute = second * 60;
