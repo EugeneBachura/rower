@@ -361,8 +361,20 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 10px 24px rgba(39,109,67,.20);
     }
 
+    .day.has-event.is-past {
+      color: rgba(247, 255, 248, 0.86);
+      background: linear-gradient(180deg, #90a690, #687c68);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 8px 18px rgba(70,80,70,.12);
+    }
+
+    .day.has-event.is-active {
+      color: #fff7f3;
+      background: linear-gradient(180deg, #c66a57, #9a3f35);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 10px 24px rgba(150,48,38,.18);
+    }
+
     .day.has-event::after {
-      content: "🚴";
+      content: "馃毚";
       position: absolute;
       right: 7px;
       bottom: 5px;
@@ -534,6 +546,10 @@
       background: rgba(255, 255, 246, 0.58);
     }
 
+    .event-item.is-past {
+      opacity: 0.72;
+    }
+
     .event-main {
       display: flex;
       align-items: flex-start;
@@ -635,16 +651,6 @@
       color: var(--muted);
       font-size: 0.98rem;
       line-height: 1.55;
-    }
-
-    .main-actions {
-      display: flex;
-      justify-content: stretch;
-      margin-top: 16px;
-    }
-
-    .main-actions .primary-button {
-      width: 100%;
     }
 
     .modal {
@@ -843,8 +849,8 @@
     <div class="minimal-road-bg"></div>
   </div>
 
-  <div class="loader" id="loader" aria-live="polite" aria-label="Ładowanie strony">
-    <div class="loader-card"><span class="loader-bike">🚴</span><span>Sprawdzamy kalendarz wyjazdów...</span></div>
+  <div class="loader" id="loader" aria-live="polite" aria-label="艁adowanie strony">
+    <div class="loader-card"><span class="loader-bike">馃毚</span><span>Sprawdzamy kalendarz wyjazd贸w...</span></div>
   </div>
 
   <main class="page">
@@ -853,39 +859,39 @@
         <div>
           <p class="eyebrow" id="eyebrow">Rowerowy kalendarz</p>
           <h1 id="title">Wyjazdy rowerowe</h1>
-          <p class="subtitle" id="subtitle">Kalendarz najbliższych tras, startów i wspólnych przejazdów.</p>
+          <p class="subtitle" id="subtitle">Kalendarz najbli偶szych tras, start贸w i wsp贸lnych przejazd贸w.</p>
         </div>
-        <button class="primary-button" type="button" id="openFormButton">Zgłoś wyjazd</button>
+        <button class="primary-button" type="button" id="openFormButton">Zg艂o艣 wyjazd</button>
       </section>
 
       <section class="main-grid">
-        <section class="panel calendar-panel" aria-label="Kalendarz wyjazdów">
+        <section class="panel calendar-panel" aria-label="Kalendarz wyjazd贸w">
           <div class="calendar-header">
             <h2 class="calendar-title" id="calendarTitle">Kalendarz</h2>
             <div class="month-controls">
-              <button class="icon-button" type="button" id="prevMonth" aria-label="Poprzedni miesiąc">‹</button>
-              <button class="icon-button" type="button" id="nextMonth" aria-label="Następny miesiąc">›</button>
+              <button class="icon-button" type="button" id="prevMonth" aria-label="Poprzedni miesi膮c">鈥?/button>
+              <button class="icon-button" type="button" id="nextMonth" aria-label="Nast臋pny miesi膮c">鈥?/button>
             </div>
           </div>
           <div class="calendar-grid" id="calendarGrid"></div>
         </section>
 
         <aside class="side">
-          <section class="panel route-panel" aria-label="Trasa do najbliższego wyjazdu">
+          <section class="panel route-panel" aria-label="Trasa do najbli偶szego wyjazdu">
             <h2 class="panel-title">Trasa do startu</h2>
-            <p class="route-note" id="routeNote">Trasa jest gotowa. Rower pojawi się, gdy będzie zaplanowany najbliższy wyjazd.</p>
+            <p class="route-note" id="routeNote"></p>
             <div class="route-map" id="routeMap">
               <svg class="route-svg" viewBox="0 0 600 260" preserveAspectRatio="none" aria-hidden="true">
                 <path class="route-solid" d="M35 205 C130 110 210 230 305 138 C398 50 474 164 565 64" />
                 <path class="route-path" id="routePathLine" d="M35 205 C130 110 210 230 305 138 C398 50 474 164 565 64" />
               </svg>
-              <span class="start-dot" id="startDot" hidden>●</span>
-              <span class="bike-on-route" id="bike" hidden>🚴‍♂️</span>
-              <span class="finish-dot" id="finishDot" hidden>🏁</span>
+              <span class="start-dot" id="startDot" hidden>鈼?/span>
+              <span class="bike-on-route" id="bike" hidden>馃毚鈥嶁檪锔?/span>
+              <span class="finish-dot" id="finishDot" hidden>馃弫</span>
             </div>
             <div class="progress-row" id="progressRow" hidden>
               <span>Start</span>
-              <span id="progressText">Brak wyjazdu</span>
+              <span id="progressText"></span>
               <span>Meta</span>
             </div>
             <div class="countdown-mini" id="countdownMini" hidden>
@@ -896,14 +902,14 @@
             </div>
           </section>
 
-          <section class="panel info-panel" aria-label="Najbliższy wyjazd">
-            <h2 class="panel-title">Najbliższy wyjazd</h2>
+          <section class="panel info-panel" aria-label="Najbli偶szy wyjazd">
+            <h2 class="panel-title">Najbli偶szy wyjazd</h2>
             <div id="nextEventBox" aria-live="polite"></div>
             <div class="date-line" id="dateLine" aria-label="Data wyjazdu" hidden>
               <span id="dateText"></span>
             </div>
             <div class="more-row">
-              <button class="text-link" type="button" id="openEventsButton">Wszystkie najbliższe</button>
+              <button class="text-link" type="button" id="openEventsButton">Wszystkie wyjazdy</button>
             </div>
           </section>
         </aside>
@@ -917,9 +923,9 @@
       <div class="modal-header">
         <div>
           <h2 id="eventsModalTitle">Wszystkie wyjazdy</h2>
-          <p>Aktualne i kolejne zaplanowane trasy.</p>
+          <p>Archiwalne, trwaj膮ce i kolejne zaplanowane trasy.</p>
         </div>
-        <button class="close-button" type="button" aria-label="Zamknij" data-close-modal>×</button>
+        <button class="close-button" type="button" aria-label="Zamknij" data-close-modal>脳</button>
       </div>
       <div class="modal-list" id="eventsList"></div>
     </section>
@@ -930,20 +936,20 @@
     <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
       <div class="modal-header">
         <div>
-          <h2 id="formModalTitle">Zgłoś wyjazd rowerowy</h2>
-          <p>Podaj termin, godziny i krótki opis trasy. Po sprawdzeniu wyjazd pojawi się w kalendarzu.</p>
+          <h2 id="formModalTitle">Zg艂o艣 wyjazd rowerowy</h2>
+          <p>Podaj termin, godziny i kr贸tki opis trasy. Po sprawdzeniu wyjazd pojawi si臋 w kalendarzu.</p>
         </div>
-        <button class="close-button" type="button" aria-label="Zamknij" data-close-modal>×</button>
+        <button class="close-button" type="button" aria-label="Zamknij" data-close-modal>脳</button>
       </div>
 
       <form class="form-grid" id="rideForm">
         <div class="field">
-          <label for="organizerName">Imię</label>
+          <label for="organizerName">Imi臋</label>
           <input id="organizerName" name="organizer_name" type="text" maxlength="80" autocomplete="name" placeholder="np. Eugene" required />
         </div>
 
         <div class="field">
-          <label for="rideTitle">Tytuł wyjazdu</label>
+          <label for="rideTitle">Tytu艂 wyjazdu</label>
           <input id="rideTitle" name="title" type="text" maxlength="120" placeholder="np. spokojna trasa po lesie" required />
         </div>
 
@@ -965,11 +971,11 @@
         </div>
 
         <div class="honeypot" aria-hidden="true">
-          <label for="website">Nie wypełniaj tego pola</label>
+          <label for="website">Nie wype艂niaj tego pola</label>
           <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
         </div>
 
-        <button class="primary-button" id="submitButton" type="submit">Wyślij zgłoszenie</button>
+        <button class="primary-button" id="submitButton" type="submit">Wy艣lij zg艂oszenie</button>
         <p class="form-message" id="formMessage" aria-live="polite"></p>
       </form>
     </section>
@@ -982,7 +988,8 @@
 
     const API_URL = `${SUPABASE_URL}/rest/v1/${TABLE_NAME}`;
 
-    let approvedRides = [];
+    let allRides = [];
+    let currentAndFutureRides = [];
     let nearestRide = null;
     let countdownTimer = null;
     let activeModal = null;
@@ -1063,18 +1070,30 @@
         .replaceAll("'", "&#039;");
     }
 
+    function rideStatus(ride) {
+      const now = Date.now();
+      const start = new Date(ride.start_at).getTime();
+      const end = new Date(ride.end_at).getTime();
+
+      if (end < now) return "past";
+      if (start <= now && end >= now) return "active";
+      return "future";
+    }
+
     function createRideHtml(ride) {
       const start = new Date(ride.start_at);
       const end = new Date(ride.end_at);
+      const status = rideStatus(ride);
       const note = ride.note ? `<p class="event-note">${escapeHtml(ride.note)}</p>` : "";
+      const statusText = status === "past" ? "Archiwalny" : status === "active" ? "Trwa teraz" : "Zaplanowany";
 
       return `
-        <article class="event-item">
+        <article class="event-item ${status === "past" ? "is-past" : ""}">
           <div class="event-main">
             <p class="event-name">${escapeHtml(ride.title)}</p>
-            <time class="event-date" datetime="${escapeHtml(ride.start_at)}">${shortDateFormatter.format(start)} – ${shortDateFormatter.format(end)}</time>
+            <time class="event-date" datetime="${escapeHtml(ride.start_at)}">${shortDateFormatter.format(start)} 鈥?${shortDateFormatter.format(end)}</time>
           </div>
-          <p class="event-meta">Organizuje: ${escapeHtml(ride.organizer_name)}</p>
+          <p class="event-meta">${statusText} 鈥?Organizuje: ${escapeHtml(ride.organizer_name)}</p>
           ${note}
         </article>
       `;
@@ -1154,16 +1173,16 @@
         const ratio = Math.max(0, Math.min(1, elapsed / total));
 
         elements.routeMap.classList.add("is-active");
-        elements.startDot.textContent = "🏁";
-        elements.finishDot.textContent = "🎉";
+        elements.startDot.textContent = "馃弫";
+        elements.finishDot.textContent = "馃帀";
         elements.progressText.textContent = "Wyjazd trwa";
         positionBikeOnPath(ratio);
         return;
       }
 
       elements.routeMap.classList.remove("is-active");
-      elements.startDot.textContent = "●";
-      elements.finishDot.textContent = "🏁";
+      elements.startDot.textContent = "鈼?;
+      elements.finishDot.textContent = "馃弫";
 
       const created = nearestRide.created_at
         ? new Date(nearestRide.created_at).getTime()
@@ -1174,14 +1193,6 @@
       const ratio = Math.max(0, Math.min(1, elapsed / total));
 
       positionBikeOnPath(ratio);
-
-      if (ratio < 0.25) {
-        elements.progressText.textContent = "Dopiero ruszył";
-      } else if (ratio < 0.70) {
-        elements.progressText.textContent = "Jest w trasie";
-      } else {
-        elements.progressText.textContent = "Meta coraz bliżej";
-      }
     }
 
     function updateMainView() {
@@ -1189,16 +1200,15 @@
         elements.eyebrow.textContent = "Rowerowy kalendarz";
         elements.title.hidden = true;
         elements.title.textContent = "";
-        elements.subtitle.textContent = "Kalendarz jest pusty, ale zawsze można zaproponować trasę i zebrać ekipę.";
+        elements.subtitle.textContent = "Kalendarz pokazuje wszystkie wyjazdy: te archiwalne i te, kt贸re dopiero przed nami.";
         elements.dateLine.hidden = true;
         elements.countdownMini.hidden = true;
         elements.nextEventBox.innerHTML = `
           <div class="empty-state">
-            <p class="empty-title">Nie ma jeszcze wyjazdów</p>
-            <p class="empty-subtitle">Dodaj pierwszy termin, start albo krótki opis trasy.</p>
+            <p class="empty-title">Nie ma najbli偶szego wyjazdu</p>
+            <p class="empty-subtitle">W kalendarzu nadal wida膰 archiwalne terminy. Mo偶na te偶 doda膰 now膮 tras臋.</p>
           </div>
         `;
-        elements.routeNote.textContent = "";
         setCountdownToZero();
         updateBikeProgress();
         renderCalendar();
@@ -1207,13 +1217,14 @@
 
       const start = new Date(nearestRide.start_at);
       const end = new Date(nearestRide.end_at);
+      const status = rideStatus(nearestRide);
 
-      elements.eyebrow.textContent = nearestRide.organizer_name || "Rowerowy kalendarz";
+      elements.eyebrow.textContent = status === "active" ? "Wyjazd trwa" : (nearestRide.organizer_name || "Rowerowy kalendarz");
       elements.title.hidden = false;
       elements.title.textContent = nearestRide.title;
-      elements.subtitle.textContent = nearestRide.note || "Najbliższy wyjazd jest już w kalendarzu.";
+      elements.subtitle.textContent = nearestRide.note || (status === "active" ? "Wyjazd jest w艂a艣nie w trakcie." : "Najbli偶szy wyjazd jest ju偶 w kalendarzu.");
       elements.dateLine.hidden = false;
-      elements.dateText.textContent = `${fullDateFormatter.format(start)} – ${fullDateFormatter.format(end)}`;
+      elements.dateText.textContent = `${fullDateFormatter.format(start)} 鈥?${fullDateFormatter.format(end)}`;
       elements.countdownMini.hidden = false;
       elements.routeNote.textContent = "";
       elements.nextEventBox.innerHTML = createRideHtml(nearestRide);
@@ -1260,17 +1271,21 @@
     }
 
     function renderEventsModal() {
-      if (!approvedRides.length) {
+      if (!allRides.length) {
         elements.eventsList.innerHTML = `
           <div class="empty-state">
-            <p class="empty-title">Nie ma jeszcze wyjazdów</p>
-            <p class="empty-subtitle">Zawsze można zaproponować trasę i zebrać ekipę na spokojny przejazd.</p>
+            <p class="empty-title">Nie ma jeszcze wyjazd贸w</p>
+            <p class="empty-subtitle">Zawsze mo偶na zaproponowa膰 tras臋 i zebra膰 ekip臋 na spokojny przejazd.</p>
           </div>
         `;
         return;
       }
 
-      elements.eventsList.innerHTML = approvedRides.map(createRideHtml).join("");
+      elements.eventsList.innerHTML = allRides
+        .slice()
+        .sort((a, b) => new Date(b.start_at) - new Date(a.start_at))
+        .map(createRideHtml)
+        .join("");
     }
 
     function renderCalendar() {
@@ -1281,16 +1296,27 @@
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       const previousMonthDays = new Date(year, month, 0).getDate();
 
-      const eventDays = new Set(
-        approvedRides.map((ride) => {
-          const date = new Date(ride.start_at);
-          return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-        })
-      );
+      const eventDays = new Map();
+
+      for (const ride of allRides) {
+        const date = new Date(ride.start_at);
+        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        const status = rideStatus(ride);
+
+        if (!eventDays.has(key)) {
+          eventDays.set(key, status);
+        }
+
+        if (status === "active") {
+          eventDays.set(key, "active");
+        } else if (status === "future" && eventDays.get(key) !== "active") {
+          eventDays.set(key, "future");
+        }
+      }
 
       elements.calendarTitle.textContent = monthFormatter.format(calendarCursor);
 
-      const weekdays = ["pn", "wt", "śr", "cz", "pt", "so", "nd"];
+      const weekdays = ["pn", "wt", "艣r", "cz", "pt", "so", "nd"];
       let html = weekdays.map((day) => `<div class="weekday">${day}</div>`).join("");
 
       for (let i = firstWeekday - 1; i >= 0; i -= 1) {
@@ -1299,8 +1325,15 @@
 
       for (let day = 1; day <= daysInMonth; day += 1) {
         const key = `${year}-${month}-${day}`;
-        const hasEvent = eventDays.has(key);
-        html += `<div class="day ${hasEvent ? "has-event" : ""}">${day}</div>`;
+        const status = eventDays.get(key);
+        const classes = [
+          "day",
+          status ? "has-event" : "",
+          status === "past" ? "is-past" : "",
+          status === "active" ? "is-active" : ""
+        ].filter(Boolean).join(" ");
+
+        html += `<div class="${classes}">${day}</div>`;
       }
 
       const totalCells = firstWeekday + daysInMonth;
@@ -1317,7 +1350,7 @@
         const query = new URLSearchParams({
           select: "id,created_at,organizer_name,title,start_at,end_at,note",
           order: "start_at.asc",
-          limit: "80"
+          limit: "500"
         });
 
         const response = await fetch(`${API_URL}?${query.toString()}`, {
@@ -1332,16 +1365,20 @@
         const data = await response.json();
         const now = Date.now();
 
-        approvedRides = data
+        allRides = data
+          .slice()
+          .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+
+        currentAndFutureRides = allRides
           .filter((ride) => new Date(ride.end_at).getTime() >= now)
           .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
 
-        nearestRide = approvedRides[0] ?? null;
+        nearestRide = currentAndFutureRides[0] ?? null;
         renderEventsModal();
         restartCountdown();
       } catch (error) {
         console.error(error);
-        elements.nextEventBox.innerHTML = `<div class="empty-state">Nie udało się pobrać listy. Spróbuj odświeżyć stronę za chwilę.</div>`;
+        elements.nextEventBox.innerHTML = `<div class="empty-state">Nie uda艂o si臋 pobra膰 listy. Spr贸buj od艣wie偶y膰 stron臋 za chwil臋.</div>`;
         renderCalendar();
       }
     }
@@ -1377,7 +1414,7 @@
       const honeypot = String(formData.get("website") || "").trim();
 
       if (honeypot) {
-        showFormMessage("Dziękujemy za zgłoszenie.", "success");
+        showFormMessage("Dzi臋kujemy za zg艂oszenie.", "success");
         elements.form.reset();
         return;
       }
@@ -1389,7 +1426,7 @@
       const note = String(formData.get("note") || "").trim();
 
       if (!organizerName || !title || !startAtInput || !endAtInput) {
-        showFormMessage("Uzupełnij imię, tytuł oraz godziny wyjazdu.", "error");
+        showFormMessage("Uzupe艂nij imi臋, tytu艂 oraz godziny wyjazdu.", "error");
         return;
       }
 
@@ -1397,22 +1434,22 @@
       const endDate = new Date(endAtInput);
 
       if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
-        showFormMessage("Podana data jest nieprawidłowa.", "error");
+        showFormMessage("Podana data jest nieprawid艂owa.", "error");
         return;
       }
 
       if (startDate.getTime() <= Date.now()) {
-        showFormMessage("Start wyjazdu musi być w przyszłości.", "error");
+        showFormMessage("Start wyjazdu musi by膰 w przysz艂o艣ci.", "error");
         return;
       }
 
       if (endDate.getTime() <= startDate.getTime()) {
-        showFormMessage("Godzina zakończenia musi być późniejsza niż start.", "error");
+        showFormMessage("Godzina zako艅czenia musi by膰 p贸藕niejsza ni偶 start.", "error");
         return;
       }
 
       elements.submitButton.disabled = true;
-      showFormMessage("Wysyłanie zgłoszenia...", "");
+      showFormMessage("Wysy艂anie zg艂oszenia...", "");
 
       try {
         const payload = {
@@ -1439,10 +1476,10 @@
 
         elements.form.reset();
         setDefaultDates();
-        showFormMessage("Zgłoszenie zapisane. Po sprawdzeniu pojawi się w kalendarzu.", "success");
+        showFormMessage("Zg艂oszenie zapisane. Po sprawdzeniu pojawi si臋 w kalendarzu.", "success");
       } catch (error) {
         console.error(error);
-        showFormMessage("Nie udało się zapisać zgłoszenia. Sprawdź dane albo spróbuj później.", "error");
+        showFormMessage("Nie uda艂o si臋 zapisa膰 zg艂oszenia. Sprawd藕 dane albo spr贸buj p贸藕niej.", "error");
       } finally {
         elements.submitButton.disabled = false;
       }
