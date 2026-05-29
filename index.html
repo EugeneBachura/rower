@@ -325,6 +325,64 @@
       gap: 8px;
     }
 
+    .calendar-tooltip {
+      position: fixed;
+      z-index: 100;
+      width: min(330px, calc(100vw - 28px));
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      color: var(--ink);
+      background: rgba(255, 255, 246, 0.96);
+      box-shadow: 0 18px 50px rgba(44, 72, 49, 0.24);
+      backdrop-filter: blur(16px) saturate(1.08);
+      -webkit-backdrop-filter: blur(16px) saturate(1.08);
+      pointer-events: none;
+      text-align: left;
+    }
+
+    .calendar-tooltip[hidden] {
+      display: none !important;
+    }
+
+    .tooltip-title {
+      margin: 0 0 9px;
+      color: var(--accent);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .tooltip-ride {
+      padding: 9px 0;
+      border-top: 1px solid rgba(19, 36, 26, 0.10);
+    }
+
+    .tooltip-ride:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .tooltip-name {
+      margin: 0;
+      color: var(--ink);
+      font-weight: 800;
+      line-height: 1.25;
+    }
+
+    .tooltip-meta,
+    .tooltip-note {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.42;
+    }
+
+    .tooltip-note {
+      color: rgba(19, 36, 26, 0.58);
+    }
+
     .weekday,
     .day {
       min-height: clamp(42px, 7vw, 76px);
@@ -359,6 +417,12 @@
       border-color: rgba(255,255,255,.42);
       font-weight: 840;
       box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 10px 24px rgba(39,109,67,.20);
+      cursor: help;
+    }
+
+    .day.has-event:focus-visible {
+      outline: 3px solid rgba(47, 124, 77, 0.32);
+      outline-offset: 2px;
     }
 
     .day.has-event.is-past {
@@ -874,6 +938,7 @@
             </div>
           </div>
           <div class="calendar-grid" id="calendarGrid"></div>
+          <div class="calendar-tooltip" id="calendarTooltip" hidden></div>
         </section>
 
         <aside class="side">
@@ -1019,6 +1084,7 @@
       openEventsButton: document.getElementById("openEventsButton"),
       calendarTitle: document.getElementById("calendarTitle"),
       calendarGrid: document.getElementById("calendarGrid"),
+      calendarTooltip: document.getElementById("calendarTooltip"),
       prevMonth: document.getElementById("prevMonth"),
       nextMonth: document.getElementById("nextMonth"),
       eventsList: document.getElementById("eventsList"),
@@ -1068,6 +1134,82 @@
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+    }
+
+    function dateKeyFromDate(date) {
+      return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    }
+
+    function ridesForCalendarDay(key) {
+      return allRides
+        .filter((ride) => dateKeyFromDate(new Date(ride.start_at)) === key)
+        .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+    }
+
+    function formatTooltipDate(key) {
+      const [year, month, day] = key.split("-").map(Number);
+      const date = new Date(year, month, day);
+      return new Intl.DateTimeFormat("pl-PL", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      }).format(date);
+    }
+
+    function showCalendarTooltip(dayElement, clientX, clientY) {
+      const key = dayElement.dataset.eventKey;
+      const rides = ridesForCalendarDay(key);
+
+      if (!rides.length) {
+        hideCalendarTooltip();
+        return;
+      }
+
+      elements.calendarTooltip.innerHTML = `
+        <p class="tooltip-title">${escapeHtml(formatTooltipDate(key))}</p>
+        ${rides.map((ride) => {
+          const start = new Date(ride.start_at);
+          const end = new Date(ride.end_at);
+          const status = rideStatus(ride);
+          const statusText = status === "past" ? "Archiwalny" : status === "active" ? "Trwa teraz" : "Zaplanowany";
+          const note = ride.note ? `<p class="tooltip-note">${escapeHtml(ride.note)}</p>` : "";
+
+          return `
+            <div class="tooltip-ride">
+              <p class="tooltip-name">${escapeHtml(ride.title)}</p>
+              <p class="tooltip-meta">${statusText} • ${shortDateFormatter.format(start)} – ${shortDateFormatter.format(end)}</p>
+              <p class="tooltip-meta">Organizuje: ${escapeHtml(ride.organizer_name)}</p>
+              ${note}
+            </div>
+          `;
+        }).join("")}
+      `;
+
+      elements.calendarTooltip.hidden = false;
+
+      const tooltipRect = elements.calendarTooltip.getBoundingClientRect();
+      const margin = 14;
+      let x = clientX + 14;
+      let y = clientY + 14;
+
+      if (x + tooltipRect.width > window.innerWidth - margin) {
+        x = clientX - tooltipRect.width - 14;
+      }
+
+      if (y + tooltipRect.height > window.innerHeight - margin) {
+        y = window.innerHeight - tooltipRect.height - margin;
+      }
+
+      x = Math.max(margin, x);
+      y = Math.max(margin, y);
+
+      elements.calendarTooltip.style.left = `${x}px`;
+      elements.calendarTooltip.style.top = `${y}px`;
+    }
+
+    function hideCalendarTooltip() {
+      elements.calendarTooltip.hidden = true;
     }
 
     function rideStatus(ride) {
@@ -1333,7 +1475,8 @@
           status === "active" ? "is-active" : ""
         ].filter(Boolean).join(" ");
 
-        html += `<div class="${classes}">${day}</div>`;
+        const dataAttributes = status ? `tabindex="0" data-event-key="${key}" aria-label="Wyjazd rowerowy: ${day}"` : "";
+        html += `<div class="${classes}" ${dataAttributes}>${day}</div>`;
       }
 
       const totalCells = firstWeekday + daysInMonth;
@@ -1492,21 +1635,55 @@
       });
     }
 
+
+    elements.calendarGrid.addEventListener("mouseover", (event) => {
+      const dayElement = event.target.closest(".day.has-event[data-event-key]");
+      if (!dayElement) return;
+      showCalendarTooltip(dayElement, event.clientX, event.clientY);
+    });
+
+    elements.calendarGrid.addEventListener("mousemove", (event) => {
+      const dayElement = event.target.closest(".day.has-event[data-event-key]");
+      if (!dayElement || elements.calendarTooltip.hidden) return;
+      showCalendarTooltip(dayElement, event.clientX, event.clientY);
+    });
+
+    elements.calendarGrid.addEventListener("mouseleave", hideCalendarTooltip);
+
+    elements.calendarGrid.addEventListener("focusin", (event) => {
+      const dayElement = event.target.closest(".day.has-event[data-event-key]");
+      if (!dayElement) return;
+      const rect = dayElement.getBoundingClientRect();
+      showCalendarTooltip(dayElement, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+
+    elements.calendarGrid.addEventListener("focusout", hideCalendarTooltip);
+
+    elements.calendarGrid.addEventListener("click", (event) => {
+      const dayElement = event.target.closest(".day.has-event[data-event-key]");
+      if (!dayElement) return;
+      const rect = dayElement.getBoundingClientRect();
+      showCalendarTooltip(dayElement, rect.left + rect.width / 2, rect.top + rect.height / 2);
+    });
+
     elements.openEventsButton.addEventListener("click", () => openModal(elements.eventsModal));
     elements.openFormButton.addEventListener("click", () => openModal(elements.formModal));
     elements.form.addEventListener("submit", submitRide);
 
     elements.prevMonth.addEventListener("click", () => {
       calendarCursor.setMonth(calendarCursor.getMonth() - 1);
+      hideCalendarTooltip();
       renderCalendar();
     });
 
     elements.nextMonth.addEventListener("click", () => {
       calendarCursor.setMonth(calendarCursor.getMonth() + 1);
+      hideCalendarTooltip();
       renderCalendar();
     });
 
     window.addEventListener("resize", () => {
+      hideCalendarTooltip();
       updateBikeProgress();
     });
 
